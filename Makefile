@@ -1,8 +1,10 @@
-obj-m	:= nfhook.o
-KSRC	:=/lib/modules/`uname -r`/build
-PWD	:=`pwd`
-#CFLAGS-nfhook.o	:= -DPRINTK_DEBUG
-ccflags-y	:= -DPRINTK_DEBUG
+ifneq ($(KERNELRELEASE),)
+	obj-m	:= nfhook.o
+else 
+	KSRC	:=/lib/modules/`uname -r`/build
+	PWD	:=`pwd`
+	#CFLAGS-nfhook.o	:= -DPRINTK_DEBUG
+	ccflags-y	:= -DPRINTK_DEBUG
 all:
 	$(MAKE)  -C $(KSRC) M=$(PWD) modules
 	
