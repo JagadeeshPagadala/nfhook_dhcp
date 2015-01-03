@@ -9,3 +9,4 @@ all:
 	$(MAKE)  -C $(KSRC) M=$(PWD) modules
 clean:
 	$(MAKE) -C $(KSRC) M=$(PWD) clean
+endif
