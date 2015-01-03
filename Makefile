@@ -7,8 +7,5 @@ else
 	ccflags-y	:= -DPRINTK_DEBUG
 all:
 	$(MAKE)  -C $(KSRC) M=$(PWD) modules
-	
-
 clean:
 	$(MAKE) -C $(KSRC) M=$(PWD) clean
-	
