@@ -26,6 +26,7 @@ static int is_udp(struct sk_buff *skb)
 
 	ip_header = ip_hdr(skb);
 	/* IP protocol Number of UDP is IPPROTO_UDP(17). See linux/in.h*/
+	/* TODO: Check does evry packet contians IP hdr*/
 	if (ip_header->protocol == IPPROTO_UDP ) {
 		return 0;
 	}
@@ -111,8 +112,9 @@ static struct nf_hook_ops nfho = {
 	.hook	= hook_func,
 	.owner	= THIS_MODULE,
 	.pf	= PF_INET, /* PF_BRIDGE is for bridge interface and PF_INET for IPv4 */
-	.hooknum = NF_INET_LOCAL_IN,//NF_INET_FORWARD, /* Refer netfiletr packet path diagram */
-	.priority = NF_IP_PRI_FIRST, 
+	.hooknum = NF_INET_LOCAL_IN,/*NF_INET_FORWARD, Refer netfiletr packet path diagram */
+	.priority = NF_IP_PRI_FIRST, /* Priority of the function within the hook (i.e. hooknum),
+					hook fn will be invoked in the priority order*/ 
 };
 
 static int nfhook_init(void)
