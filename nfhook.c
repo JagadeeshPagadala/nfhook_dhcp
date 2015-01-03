@@ -55,7 +55,7 @@ static int is_dhcp(struct sk_buff *skb)
 /*
  *
  */
-static int is_dhcp_ack(struct sk_buff *skb)
+static void dhcp_pkt_type(struct sk_buff *skb)
 {
 
 	struct udphdr *udp_header;
@@ -69,12 +69,9 @@ static int is_dhcp_ack(struct sk_buff *skb)
 	/*type = *((int*)(udp_data + sizeof(struct udphdr)));*/
 	type_offset = 1+1+1+1+4+2+2+4+4+4+4+16+64+128+4+2;
 	type = *(udp_data + type_offset);  /* type is 1 byte data */
-	if (5 == *(udp_data + type_offset)) {
-		printk(KERN_DEBUG"\n%s: dhcp-packet type %d\n", __func__, type);
-		return 1;
-	}
+	printk(KERN_DEBUG"\n%s: dhcp-packet type %d\n", __func__, type);
 
-	return 0;
+	return ;
 }
 
 /*
@@ -118,22 +115,14 @@ static unsigned int hook_func (const struct nf_hook_ops *ops,
 	printk(KERN_DEBUG"%s: DHCP packet RXd\n", __func__);
 #endif
 	/* If packet RX is DHCP packet */
-	/* Check for DHCP ACK */
-	ret = is_dhcp_ack(skb);
-	if (ret != 1)
-		return NF_ACCEPT;
-
-	pr_debug("%s:DHCP ACK packet RXd\n", __func__);
-#ifdef PRINTK_DEBUG
-	printk(KERN_DEBUG"%s: DHCP ACK packet RXd\n", __func__);
-#endif
-	/* If we reach here, dhcp_ack packet */
+	/* Check for DHCP PKT Type */
+	dhcp_pkt_type(skb);
 
 	return NF_ACCEPT;
 }
 
-
-static struct nf_hook_ops nfho = {
+/* Hook for Incoming packets (PRE ROUTING) */
+static struct nf_hook_ops pre_nfho = {
 	.hook	= hook_func,
 	.owner	= THIS_MODULE,
 	.pf	= PF_INET, /* PF_BRIDGE is for bridge interface and  \
@@ -151,25 +140,33 @@ static struct nf_hook_ops nfho = {
 	/*.hooknum = NF_INET_LOCAL_IN, change to NF_INET_FORWARD to \
 		capture on arouter,  Refer netfiletr packet path diagram */
 	.priority = NF_IP_PRI_FIRST,
-	.pf	= PF_INET,
-		/* PF_BRIDGE is for bridge interface and PF_INET for IPv4 */
-	.priority = NF_IP_PRI_FIRST,
 	/* Priority of the function within the hook (i.e. hooknum),
 			hook fn will be invoked in the priority order*/
+};
+
+/* Hook for Outgoing packets (POST ROUTING)*/
+static struct nf_hook_ops post_nfho = {
+	.hook		= hook_func,
+	.owner		= THIS_MODULE,
+	.pf		= PF_INET,
+	.hooknum	= NF_INET_LOCAL_OUT,
+	.priority	= NF_IP_PRI_FIRST,
 };
 
 static int nfhook_init(void)
 {
 	int ret = 0;
 
-	ret = nf_register_hook(&nfho); /* It return 0 always */
+	ret = nf_register_hook(&pre_nfho); /* It return 0 always */
+	ret = nf_register_hook(&post_nfho); /* It return 0 always */
 
 	return 0;
 }
 
 static void nfhook_exit(void)
 {
-	nf_unregister_hook(&nfho);
+	nf_unregister_hook(&pre_nfho);
+	nf_unregister_hook(&post_nfho);
 }
 
 module_init(nfhook_init);
