@@ -130,6 +130,7 @@ unsigned int hook_func (unsigned int hooknum, struct sk_buff *skb,
 static struct nf_hook_ops nfho = {
 	.hook	= hook_func,
 	.owner	= THIS_MODULE,
+<<<<<<< HEAD
 	.pf	= PF_INET, /* PF_BRIDGE is for bridge interface and  \
 							PF_INET for IPv4 */
 	/*TODO:
@@ -144,6 +145,12 @@ static struct nf_hook_ops nfho = {
 	//.hooknum = NF_INET_LOCAL_IN,/* change to NF_INET_FORWARD to \
 		capture on arouter,  Refer netfiletr packet path diagram */
 	.priority = NF_IP_PRI_FIRST,
+=======
+	.pf	= PF_INET, /* PF_BRIDGE is for bridge interface and PF_INET for IPv4 */
+	.hooknum = NF_INET_LOCAL_IN,/*NF_INET_FORWARD, Refer netfiletr packet path diagram */
+	.priority = NF_IP_PRI_FIRST, /* Priority of the function within the hook (i.e. hooknum),
+					hook fn will be invoked in the priority order*/ 
+>>>>>>> master
 };
 
 static int nfhook_init(void)
