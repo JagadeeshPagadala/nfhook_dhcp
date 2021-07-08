@@ -2,7 +2,8 @@ ifneq ($(KERNELRELEASE),)
 	ccflags-y	:= -DPRINTK_DEBUG
 	obj-m	:= nfhook.o
 else
-	KSRC	:=/lib/modules/`uname -r`/build
+	#KSRC	:=/lib/modules/`uname -r`/build
+	KSRC	:=/home/tux/workspace/linux-source-4.19
 	PWD	:=`pwd`
 	#CFLAGS-nfhook.o	:= -DPRINTK_DEBUG
 	ccflags-y	:= -DPRINTK_DEBUG

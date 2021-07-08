@@ -77,11 +77,9 @@ static void dhcp_pkt_type(struct sk_buff *skb)
 /*
  *	Netfilter Hook function
  */
-static unsigned int hook_func (const struct nf_hook_ops *ops,
+static unsigned int hook_func (void *priv,
 				struct sk_buff *skb,
-				const struct net_device *in,
-				const struct net_device *out,
-				int (*okfn) (struct sk_buff *))
+				const struct nf_hook_state *state)
 {
 	int ret = 0;
 
@@ -124,7 +122,6 @@ static unsigned int hook_func (const struct nf_hook_ops *ops,
 /* Hook for Incoming packets (PRE ROUTING) */
 static struct nf_hook_ops pre_nfho = {
 	.hook	= hook_func,
-	.owner	= THIS_MODULE,
 	.pf	= PF_INET, /* PF_BRIDGE is for bridge interface and  \
 							PF_INET for IPv4 */
 	/*TODO:
@@ -144,29 +141,18 @@ static struct nf_hook_ops pre_nfho = {
 			hook fn will be invoked in the priority order*/
 };
 
-/* Hook for Outgoing packets (POST ROUTING)*/
-static struct nf_hook_ops post_nfho = {
-	.hook		= hook_func,
-	.owner		= THIS_MODULE,
-	.pf		= PF_INET,
-	.hooknum	= NF_INET_LOCAL_OUT,
-	.priority	= NF_IP_PRI_FIRST,
-};
-
 static int nfhook_init(void)
 {
 	int ret = 0;
 
-	ret = nf_register_hook(&pre_nfho); /* It return 0 always */
-	ret = nf_register_hook(&post_nfho); /* It return 0 always */
+	ret = nf_register_net_hook(&init_net, &pre_nfho); /* It return 0 always */
 
 	return 0;
 }
 
 static void nfhook_exit(void)
 {
-	nf_unregister_hook(&pre_nfho);
-	nf_unregister_hook(&post_nfho);
+	nf_unregister_net_hook(&init_net, &pre_nfho);
 }
 
 module_init(nfhook_init);
