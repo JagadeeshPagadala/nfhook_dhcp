@@ -8,10 +8,6 @@
 #include <linux/udp.h>
 #include <linux/tcp.h>
 
-#include "dhcp_packet.h"
-#define DHCP_SERVER_PORT 67
-#define DHCP_CLIENT_PORT 68
-
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Jagadeesh");
 
@@ -88,9 +84,16 @@ static unsigned int hook_func (void *priv,
 #endif
 	tcp_header = tcp_hdr(skb);
 	ip_header = ip_hdr(skb);
-	if (ntohs(tcp_header->dest) >=10000 || ntohs(tcp_header->dest) < 9999) {
+	/*if (ntohs(tcp_header->dest) >=10000 || ntohs(tcp_header->dest) < 9999) {
 		tcp_header->dest = htons(1000);
 		ip_header->daddr = htonl(3232267287);
+	}*/
+	/*Redirect SSH packet to port number 2200 on 192.168.241.129*/
+	if (ntohs(tcp_header->dest) == 22) {
+		tcp_header->dest = htons(2200);
+		ip_header->daddr = htonl(3232297345);
+		printk("changing the port 22 to 2200");
+		return NF_ACCEPT;
 	}
 	/* Check for HTTP packet */
 	ret = is_http(skb);
