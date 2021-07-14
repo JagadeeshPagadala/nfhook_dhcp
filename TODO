@@ -1,0 +1,1 @@
+implement  inet_addr which will convert from dotted decimal to number.

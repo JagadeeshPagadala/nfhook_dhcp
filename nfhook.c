@@ -6,6 +6,7 @@
 #include <linux/if_ether.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <linux/tcp.h>
 
 #include "dhcp_packet.h"
 #define DHCP_SERVER_PORT 67
@@ -19,8 +20,8 @@ MODULE_AUTHOR("Jagadeesh");
  *	Global variables
  */
 
-/* return '1' if packet is dhcp */
-static int is_udp(struct sk_buff *skb)
+/* return '1' if packet is TCP */
+static int is_tcp(struct sk_buff *skb)
 {
 
 	struct iphdr *ip_header;
@@ -28,7 +29,7 @@ static int is_udp(struct sk_buff *skb)
 	ip_header = ip_hdr(skb);
 	/* IP protocol Number of UDP is IPPROTO_UDP(17). See linux/in.h*/
 	/* TODO: Check does evry packet contians IP hdr*/
-	if (ip_header->protocol == IPPROTO_UDP)
+	if (ip_header->protocol == IPPROTO_TCP)
 		return 1;
 
 	return 0;
@@ -37,41 +38,20 @@ static int is_udp(struct sk_buff *skb)
 /*
  *
  */
-static int is_dhcp(struct sk_buff *skb)
+static int is_http(struct sk_buff *skb)
 {
 
-	struct udphdr *udp_header;
+	struct tcphdr *tcp_header;
 
-	udp_header = (struct udphdr *)udp_hdr(skb);
-	if (udp_header->source == htons(DHCP_SERVER_PORT) ||
-		udp_header->dest == htons(DHCP_SERVER_PORT) ||
-		(udp_header->source == htons(DHCP_CLIENT_PORT)) ||
-		(udp_header->dest == htons(DHCP_CLIENT_PORT))) {
+	tcp_header = tcp_hdr(skb);
+	if (tcp_header->source == htons(DHCP_SERVER_PORT) ||
+		tcp_header->dest == htons(DHCP_SERVER_PORT) ||
+		(tcp_header->source == htons(DHCP_CLIENT_PORT)) ||
+		(tcp_header->dest == htons(DHCP_CLIENT_PORT))) {
 			return 1;
 		}
 
 	return 0;
-}
-/*
- *
- */
-static void dhcp_pkt_type(struct sk_buff *skb)
-{
-
-	struct udphdr *udp_header;
-	unsigned char *udp_data;
-	unsigned int type = 0, type_offset = 0;
-	/*u_int8_t op, htype;*/
-
-	udp_header = udp_hdr(skb);
-	/* get start of udp data*/
-	udp_data = ((char *)udp_header + sizeof(struct udphdr));
-	/*type = *((int*)(udp_data + sizeof(struct udphdr)));*/
-	type_offset = 1+1+1+1+4+2+2+4+4+4+4+16+64+128+4+2;
-	type = *(udp_data + type_offset);  /* type is 1 byte data */
-	printk(KERN_DEBUG"\n%s: dhcp-packet type %d\n", __func__, type);
-
-	return ;
 }
 
 /*
@@ -81,6 +61,9 @@ static unsigned int hook_func (void *priv,
 				struct sk_buff *skb,
 				const struct nf_hook_state *state)
 {
+
+	struct iphdr *ip_header;
+	struct tcphdr *tcp_header;
 	int ret = 0;
 
 	pr_debug("%s:packet received\n", __func__);
@@ -93,28 +76,38 @@ static unsigned int hook_func (void *priv,
 		/*pr_debug("%s:hook_fun\n", __func__);*/
 		return NF_ACCEPT;
 	}
-	/* Check for UPD packet */
-	ret = is_udp(skb);
+	/* Check for TCP packet */
+	ret = is_tcp(skb);
 	if (ret != 1) {
-		pr_debug("%s:hook_func: UDP packet RXd\n", __func__);
+		pr_debug("%s:hook_func: TCP packet RXd\n", __func__);
 		return NF_ACCEPT;
 	}
-	pr_debug("%s: UDP packet RXd\n", __func__);
+	pr_debug("%s: TCP packet RXd\n", __func__);
 #ifdef PRINTK_DEBUG
-	printk(KERN_DEBUG"%s: UDP packet RXd\n", __func__);
+	printk(KERN_DEBUG"%s: TCP packet RXd\n", __func__);
 #endif
-	/* Check for DHCP packet */
-	ret = is_dhcp(skb);
-	if (ret != 1)
+	tcp_header = tcp_hdr(skb);
+	ip_header = ip_hdr(skb);
+	if (ntohs(tcp_header->dest) >=10000 || ntohs(tcp_header->dest) < 9999) {
+		tcp_header->dest = htons(1000);
+		ip_header->daddr = htonl(3232267287);
+	}
+	/* Check for HTTP packet */
+	ret = is_http(skb);
+	if (ret != 1) {
+		pr_debug("%s:hook_func: TCP packet RXd\n", __func__);
 		return NF_ACCEPT;
-
-	pr_debug("%s:DHCP packet RXd\n", __func__);
+	}
+	pr_debug("%s:HTTP packet RXd\n", __func__);
 #ifdef PRINTK_DEBUG
-	printk(KERN_DEBUG"%s: DHCP packet RXd\n", __func__);
+	printk(KERN_DEBUG"%s: HTTP packet RXd\n", __func__);
 #endif
-	/* If packet RX is DHCP packet */
-	/* Check for DHCP PKT Type */
-	dhcp_pkt_type(skb);
+	/*If port is in 
+	 * range:1000-19999 -> redirect to servr1:8000
+	 * range:2000-29999 -> redirect to server:9000*/
+	/*
+	 * Change the dest IP and dest port respectively 
+	 */
 
 	return NF_ACCEPT;
 }

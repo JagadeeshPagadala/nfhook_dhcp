@@ -3,7 +3,7 @@ ifneq ($(KERNELRELEASE),)
 	obj-m	:= nfhook.o
 else
 	#KSRC	:=/lib/modules/`uname -r`/build
-	KSRC	:=/home/tux/workspace/linux-source-4.19
+	KSRC	:=~/Workspace/kernel/linux-4.19.196
 	PWD	:=`pwd`
 	#CFLAGS-nfhook.o	:= -DPRINTK_DEBUG
 	ccflags-y	:= -DPRINTK_DEBUG
